@@ -284,7 +284,7 @@ Closing:
       "https://api.bolna.ai/v2/agent",
       {
         agent_config: {
-          agent_name: "test1",
+          agent_name: name,
           agent_welcome_message: "How are you doing Bruce?",
           tasks: [
             {
