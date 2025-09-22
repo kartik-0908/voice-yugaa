@@ -1,6 +1,6 @@
 "use server";
 
-import { PrismaClient } from "@/lib/generated/prisma";
+import { PrismaClient } from "../../node_modules/.prisma/client";
 import axios from "axios";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
