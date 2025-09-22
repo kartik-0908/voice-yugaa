@@ -6,6 +6,13 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 // Define the Agent type
+export interface AgentwithName {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Agent {
   id: string;
   createdAt: Date;
@@ -14,8 +21,29 @@ export interface Agent {
 
 const prisma = new PrismaClient();
 
+export async function getAgentName(id: string) {
+  const agent = await prisma.agents.findUnique({
+    where: {
+      id: id,
+    },
+  });
+  console.log(agent);
+  const token = process.env.BOLNA_API_KEY;
+  console.log(token);
+  const res = await axios.get(
+    `https://api.bolna.ai/v2/agent/${agent?.bolnaId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  console.log(res.data);
+  return res.data.agent_name;
+}
+
 // Get all agents
-export async function getAllAgents(): Promise<Agent[]> {
+export async function getAllAgents(): Promise<AgentwithName[]> {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -31,7 +59,25 @@ export async function getAllAgents(): Promise<Agent[]> {
         createdAt: "desc",
       },
     });
-    return agents;
+    const agentsWithNames = await Promise.all(
+      agents.map(async (agent) => {
+        try {
+          const name = await getAgentName(agent.id);
+          return {
+            ...agent,
+            name: name,
+          };
+        } catch (error) {
+          console.error(`Error fetching name for agent ${agent.id}:`, error);
+          return {
+            ...agent,
+            name: null, // or some default value
+          };
+        }
+      })
+    );
+
+    return agentsWithNames;
   } catch (error) {
     console.error("Error fetching agents:", error);
     return [];

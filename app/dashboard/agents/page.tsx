@@ -1,6 +1,4 @@
 import { createAgent, getAllAgents } from "@/app/actions/agents";
-import { Agent } from "@/lib/types";
-import { ChevronsLeftRight } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 
@@ -78,14 +76,11 @@ export default async function AgentsPage() {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
                       {
-                        //@ts-ignore
-
                         agent.name.charAt(0).toUpperCase()
                       }
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">{
-                      //@ts-ignore
                       agent.name}</h3>
                       <p className="text-sm text-gray-500">AI Agent</p>
                     </div>
