@@ -168,7 +168,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
             Agent Customization
           </h1>
           <p className="text-muted-foreground">
-            Customize your agent's behavior, voice, and personality.
+            Customize your agent`&apos;`s behavior, voice, and personality.
           </p>
         </div>
 
@@ -347,7 +347,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
             System Prompt
           </CardTitle>
           <CardDescription>
-            Define your agent's personality, behavior, and capabilities.
+            Define your agent`&apos;`s personality, behavior, and capabilities.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

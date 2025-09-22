@@ -14,7 +14,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <div className="text-center">
               <h2 className="text-2xl font-semibold mb-2">Agent Not Found</h2>
               <p className="text-muted-foreground">
-                The agent you're looking for doesn't exist or you don't have permission to access it.
+                The agent you`&apos;`re looking for doesn`&apos;`t exist or you don`&apos;`t have permission to access it.
               </p>
             </div>
           </CardContent>

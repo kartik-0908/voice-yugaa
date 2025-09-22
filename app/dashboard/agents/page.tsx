@@ -1,4 +1,5 @@
 import { createAgent, getAllAgents } from "@/app/actions/agents";
+import { Agent } from "@/lib/types";
 import { ChevronsLeftRight } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
@@ -68,7 +69,7 @@ export default async function AgentsPage() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {agents.map((agent: any) => (
+            {agents.map((agent, i) => (
               <div
                 key={agent.id}
                 className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow"
@@ -76,10 +77,16 @@ export default async function AgentsPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {agent.name.charAt(0).toUpperCase()}
+                      {
+                        //@ts-ignore
+
+                        agent.name.charAt(0).toUpperCase()
+                      }
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{agent.name}</h3>
+                      <h3 className="font-semibold text-lg">{
+                      //@ts-ignore
+                      agent.name}</h3>
                       <p className="text-sm text-gray-500">AI Agent</p>
                     </div>
                   </div>
