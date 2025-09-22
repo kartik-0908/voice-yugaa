@@ -1,5 +1,6 @@
 "use client";
 
+import { redirect, useRouter } from "next/navigation";
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -27,6 +28,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 
 export function NavUser() {
+  const router = useRouter();
   const { isMobile } = useSidebar();
   const {
     data: session,
@@ -34,6 +36,22 @@ export function NavUser() {
     error, //error object
     refetch, //refetch the session
   } = authClient.useSession();
+
+  const handleLogout = async () => {
+    try {
+      await authClient.signOut({
+        fetchOptions: {
+          onSuccess: () => {
+            router.push("/login"); // redirect to login page
+          },
+        },
+      });
+      redirect('/login')
+    } catch (error) {
+      console.error("Logout failed:", error);
+      // Optionally show a toast notification or handle the error
+    }
+  };
 
   if (isPending) {
     return null;
@@ -111,7 +129,7 @@ export function NavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />
               Log out
             </DropdownMenuItem>
