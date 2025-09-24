@@ -306,7 +306,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
             Basic Information & Conversation
           </CardTitle>
           <CardDescription>
-            Configure your agent's name and how it introduces itself.
+            Configure your agent&apos;s name and how it introduces itself.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -381,7 +381,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
             Voice Settings
           </CardTitle>
           <CardDescription>
-            Choose the voice for your agent's audio responses.
+            Choose the voice for your agent&apos;s audio responses.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
