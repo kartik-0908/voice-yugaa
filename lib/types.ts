@@ -3,5 +3,6 @@ export interface Agent {
   name: string;
   firstMessage: string;
   systemPrompt: string;
-  voice: string;
+  voiceId: string;
+  voiceName: string;
 }

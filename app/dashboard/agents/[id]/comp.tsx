@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { initiateCallfromAgent, updateAgent } from "@/app/actions/agents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,43 +38,13 @@ import {
   Settings,
   Volume2,
   Phone,
+  Play,
+  Pause,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Agent } from "@/lib/types";
-
-// Voice options for the agent
-const VOICE_OPTIONS = [
-  { value: "alloy", label: "Alloy" },
-  { value: "echo", label: "Echo" },
-  { value: "fable", label: "Fable" },
-  { value: "onyx", label: "Onyx" },
-  { value: "nova", label: "Nova" },
-  { value: "shimmer", label: "Shimmer" },
-];
-
-// Country codes for phone numbers
-const COUNTRY_CODES = [
-  { code: "+1", country: "US/CA", flag: "🇺🇸" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+91", country: "IN", flag: "🇮🇳" },
-  { code: "+86", country: "CN", flag: "🇨🇳" },
-  { code: "+81", country: "JP", flag: "🇯🇵" },
-  { code: "+49", country: "DE", flag: "🇩🇪" },
-  { code: "+33", country: "FR", flag: "🇫🇷" },
-  { code: "+61", country: "AU", flag: "🇦🇺" },
-  { code: "+55", country: "BR", flag: "🇧🇷" },
-  { code: "+7", country: "RU", flag: "🇷🇺" },
-  { code: "+82", country: "KR", flag: "🇰🇷" },
-  { code: "+39", country: "IT", flag: "🇮🇹" },
-  { code: "+34", country: "ES", flag: "🇪🇸" },
-  { code: "+31", country: "NL", flag: "🇳🇱" },
-  { code: "+46", country: "SE", flag: "🇸🇪" },
-  { code: "+41", country: "CH", flag: "🇨🇭" },
-  { code: "+65", country: "SG", flag: "🇸🇬" },
-  { code: "+971", country: "AE", flag: "🇦🇪" },
-  { code: "+966", country: "SA", flag: "🇸🇦" },
-  { code: "+52", country: "MX", flag: "🇲🇽" },
-];
+import { voices } from "@/lib/voices";
+import { COUNTRY_CODES } from "@/lib/countryCode";
 
 interface AgentCustomizationProps {
   agent: Agent;
@@ -86,12 +56,15 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [countryCode, setCountryCode] = useState("+1");
   const [mobileNumber, setMobileNumber] = useState("");
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [formData, setFormData] = useState({
     name: agent.name || "",
     firstMessage: agent.firstMessage || "",
     systemPrompt: agent.systemPrompt || "",
-    voice: agent.voice || "alloy",
+    voiceId: agent.voiceId || voices[0]?.id || "abhilash",
+    voiceName: agent.voiceName || voices[0]?.name || "Abhilash",
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -153,11 +126,54 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
     triggerTestCall(fullPhoneNumber);
   };
 
+  const playVoiceSample = (voiceId: string) => {
+    const voice = voices.find((v) => v.id === voiceId);
+    if (!voice) return;
+
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    // If the same voice is playing, stop it
+    if (playingVoiceId === voiceId) {
+      setPlayingVoiceId(null);
+      return;
+    }
+
+    // Play new audio
+    audioRef.current = new Audio(voice.audioFile);
+    audioRef.current
+      .play()
+      .then(() => {
+        setPlayingVoiceId(voiceId);
+      })
+      .catch((error) => {
+        console.error("Error playing audio:", error);
+        toast.error("Could not play voice sample");
+      });
+
+    // Reset playing state when audio ends
+    audioRef.current.onended = () => {
+      setPlayingVoiceId(null);
+    };
+  };
+
+  const stopVoiceSample = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlayingVoiceId(null);
+  };
+
   const hasChanges =
     formData.name !== agent.name ||
     formData.firstMessage !== agent.firstMessage ||
     formData.systemPrompt !== agent.systemPrompt ||
-    formData.voice !== agent.voice;
+    formData.voiceId !== agent.voiceId ||
+    formData.voiceName !== agent.voiceName;
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -168,7 +184,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
             Agent Customization
           </h1>
           <p className="text-muted-foreground">
-            Customize your agent &apos;s behavior, voice, and personality.
+            Customize your agent&apos;s behavior, voice, and personality.
           </p>
         </div>
 
@@ -282,18 +298,18 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
 
       <Separator />
 
-      {/* Basic Information Card */}
+      {/* Basic Information & Conversation Settings Card */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
-            Basic Information
+            Basic Information & Conversation
           </CardTitle>
           <CardDescription>
-            Configure the basic settings for your agent.
+            Configure your agent's name and how it introduces itself.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="agent-name">Agent Name</Label>
             <Input
@@ -304,21 +320,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
               className="max-w-md"
             />
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Conversation Settings Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5" />
-            Conversation Settings
-          </CardTitle>
-          <CardDescription>
-            Set how your agent introduces itself and starts conversations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="first-message">First Message</Label>
             <Textarea
@@ -372,7 +374,7 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
       </Card>
 
       {/* Voice Settings Card */}
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Volume2 className="h-5 w-5" />
@@ -383,47 +385,70 @@ export function AgentCustomizationForm({ agent }: AgentCustomizationProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="voice-select">Voice</Label>
-            <Select
-              value={formData.voice}
-              onValueChange={(value) => handleInputChange("voice", value)}
-            >
-              <SelectTrigger className="max-w-md">
-                <SelectValue placeholder="Select a voice" />
-              </SelectTrigger>
-              <SelectContent>
-                {VOICE_OPTIONS.map((voice) => (
-                  <SelectItem key={voice.value} value={voice.value}>
-                    {voice.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <Label>Select Voice</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {voices.map((voice) => (
+                <div
+                  key={voice.id}
+                  className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                    formData.voiceId === voice.id
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  onClick={() => {
+                    handleInputChange("voiceId", voice.id);
+                    handleInputChange("voiceName", voice.name);
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="font-medium">{voice.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {voice.description}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (playingVoiceId === voice.id) {
+                          stopVoiceSample();
+                        } else {
+                          playVoiceSample(voice.id);
+                        }
+                      }}
+                    >
+                      {playingVoiceId === voice.id ? (
+                        <Pause className="h-4 w-4" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+
+                  {formData.voiceId === voice.id && (
+                    <div className="flex items-center gap-2 text-sm text-primary">
+                      <div className="w-2 h-2 bg-primary rounded-full"></div>
+                      Selected
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             <p className="text-sm text-muted-foreground">
-              The selected voice will be used when your agent provides audio
-              responses.
+              Click the play button to hear a voice sample. The selected voice
+              will be used when your agent provides audio responses.
             </p>
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-4 pt-6">
-        {/* <Button
-          variant="outline"
-          onClick={() => {
-            setFormData({
-              name: agent.name || "",
-              firstMessage: agent.firstMessage || "",
-              systemPrompt: agent.systemPrompt || "",
-              voice: agent.voice || "alloy",
-            });
-          }}
-          disabled={isPending || !hasChanges}
-        >
-          Reset Changes
-        </Button> */}
         <Button onClick={handleSave} disabled={isPending || !hasChanges}>
           {isPending ? (
             <>

@@ -416,13 +416,16 @@ export async function getAgentById(id: string) {
         },
       }
     );
-    console.log(res.data);
+    console.log(res.data.tasks[0].tools_config.synthesizer.provider_config);
     return {
       id: id,
       name: res.data.agent_name || "",
       firstMessage: res.data.agent_welcome_message || "",
       systemPrompt: res.data.agent_prompts.task_1.system_prompt || "",
-      voice: "",
+      voiceId:
+        res.data.tasks[0].tools_config.synthesizer.provider_config.voice_id,
+      voiceName:
+        res.data.tasks[0].tools_config.synthesizer.provider_config.voice,
     };
   } catch (error) {
     console.error("Error fetching agent:", error);
@@ -437,7 +440,8 @@ export async function updateAgent(
     name: string;
     firstMessage: string;
     systemPrompt: string;
-    voice: string;
+    voiceId: string;
+    voiceName: string;
   }
 ) {
   const token = process.env.BOLNA_API_KEY;
@@ -454,8 +458,8 @@ export async function updateAgent(
     if (!agent) {
       throw new Error("Agent not found");
     }
-    console.log("updating agent with id", id);
-    const res = await axios.patch(
+    console.log("updating agent with id", id, agent.bolnaId);
+    const res = await axios.put(
       `https://api.bolna.ai/v2/agent/${agent.bolnaId}`,
       {
         agent_config: {
@@ -495,8 +499,8 @@ export async function updateAgent(
                   provider_config: {
                     model: "bulbul:v2",
                     speed: 1.0,
-                    voice: "Vidya",
-                    voice_id: "vidya",
+                    voice: formData.voiceName,
+                    voice_id: formData.voiceId,
                     temperature: 0.5,
                     similarity_boost: 0.5,
                   },
@@ -556,6 +560,7 @@ export async function updateAgent(
         },
       }
     );
+    console.log(res.data);
   } catch (error) {
     console.error("Error updating agent:", error);
     throw new Error("Failed to update agent");
