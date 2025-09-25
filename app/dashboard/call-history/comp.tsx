@@ -35,6 +35,9 @@ export default function CallHistory() {
   const [hasMore, setHasMore] = useState(false);
   const [total, setTotal] = useState(0);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [playbackProgress, setPlaybackProgress] = useState<{
+    [key: string]: { current: number; total: number };
+  }>({});
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Load agents on component mount
@@ -115,6 +118,12 @@ export default function CallHistory() {
     return new Date(utcString);
   };
 
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "completed":
@@ -155,11 +164,29 @@ export default function CallHistory() {
 
       audio.onended = () => {
         setCurrentlyPlaying(null);
+        setPlaybackProgress((prev) => ({
+          ...prev,
+          [executionId]: { current: 0, total: 0 },
+        }));
       };
 
       audio.onerror = () => {
         console.error("Error playing audio");
         setCurrentlyPlaying(null);
+      };
+
+      audio.onloadedmetadata = () => {
+        setPlaybackProgress((prev) => ({
+          ...prev,
+          [executionId]: { current: 0, total: audio.duration },
+        }));
+      };
+
+      audio.ontimeupdate = () => {
+        setPlaybackProgress((prev) => ({
+          ...prev,
+          [executionId]: { current: audio.currentTime, total: audio.duration },
+        }));
       };
 
       audio.play().catch((error) => {
@@ -245,8 +272,9 @@ export default function CallHistory() {
                 <TableRow>
                   <TableHead>Phone Number</TableHead>
                   <TableHead>Time</TableHead>
+                  <TableHead>Duration</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-32">Recording</TableHead>
+                  <TableHead className="w-48">Recording</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -270,6 +298,11 @@ export default function CallHistory() {
                       </div>
                     </TableCell>
                     <TableCell>
+                      <div className="text-sm">
+                        {formatDuration(execution.telephony_data.duration)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={getStatusBadgeVariant(execution.status)}>
                         {execution.status.replace("_", " ")}
                       </Badge>
@@ -277,32 +310,77 @@ export default function CallHistory() {
                     <TableCell>
                       {execution.status === "completed" &&
                       execution.telephony_data.recording_url ? (
-                        <Button
-                          variant={
-                            currentlyPlaying === execution.id
-                              ? "default"
-                              : "outline"
-                          }
-                          size="sm"
-                          onClick={() =>
-                            handlePlayRecording(
-                              execution.telephony_data.recording_url!,
-                              execution.id
-                            )
-                          }
-                          className={`flex items-center gap-2 ${
-                            currentlyPlaying === execution.id
-                              ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
-                              : ""
-                          }`}
-                        >
-                          {currentlyPlaying === execution.id ? (
-                            <Pause className="h-4 w-4" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )}
-                          {currentlyPlaying === execution.id ? "Pause" : "Play"}
-                        </Button>
+                        <div className="space-y-2">
+                          <Button
+                            variant={
+                              currentlyPlaying === execution.id
+                                ? "default"
+                                : "outline"
+                            }
+                            size="sm"
+                            onClick={() =>
+                              handlePlayRecording(
+                                execution.telephony_data.recording_url!,
+                                execution.id
+                              )
+                            }
+                            className={`flex items-center gap-2 ${
+                              currentlyPlaying === execution.id
+                                ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                : ""
+                            }`}
+                          >
+                            {currentlyPlaying === execution.id ? (
+                              <Pause className="h-4 w-4" />
+                            ) : (
+                              <Play className="h-4 w-4" />
+                            )}
+                            {currentlyPlaying === execution.id
+                              ? "Pause"
+                              : "Play"}
+                          </Button>
+
+                          {/* Progress Bar - only show when playing */}
+                          {currentlyPlaying === execution.id &&
+                            playbackProgress[execution.id] && (
+                              <div className="w-full">
+                                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                                  <span>
+                                    {formatDuration(
+                                      Math.floor(
+                                        playbackProgress[execution.id]
+                                          .current || 0
+                                      )
+                                    )}
+                                  </span>
+                                  <span>
+                                    {formatDuration(
+                                      Math.floor(
+                                        playbackProgress[execution.id].total ||
+                                          0
+                                      )
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                    style={{
+                                      width: `${
+                                        playbackProgress[execution.id].total > 0
+                                          ? (playbackProgress[execution.id]
+                                              .current /
+                                              playbackProgress[execution.id]
+                                                .total) *
+                                            100
+                                          : 0
+                                      }%`,
+                                    }}
+                                  ></div>
+                                </div>
+                              </div>
+                            )}
+                        </div>
                       ) : (
                         <span className="text-sm text-muted-foreground">
                           {execution.status !== "completed"
