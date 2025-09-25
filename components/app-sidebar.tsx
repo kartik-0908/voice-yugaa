@@ -10,6 +10,8 @@ import {
   IconHelp,
   IconHome2,
   IconMicrophone,
+  IconMobiledata,
+  IconPhoneCalling,
   IconReport,
   IconSearch,
   IconSettings,
@@ -49,6 +51,11 @@ const data = {
       title: "Voice Library",
       url: "/dashboard/voice-library",
       icon: IconMicrophone,
+    },
+    {
+      title: "Call History",
+      url: "/dashboard/call-history",
+      icon: IconPhoneCalling,
     },
   ],
   navClouds: [

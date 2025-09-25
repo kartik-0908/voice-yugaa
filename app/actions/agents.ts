@@ -4,6 +4,7 @@ import { PrismaClient } from "../../node_modules/.prisma/client";
 import axios from "axios";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { CallHistoryResponse } from "@/lib/types";
 
 // Define the Agent type
 export interface AgentwithName {
@@ -86,7 +87,6 @@ export async function getAllAgents(): Promise<AgentwithName[]> {
 
 // Create a new agent
 export async function createAgent(name: string): Promise<Agent> {
-
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
@@ -186,7 +186,8 @@ export async function createAgent(name: string): Promise<Agent> {
         },
         agent_prompts: {
           task_1: {
-            system_prompt: "You are an AI assistant , your job is to help people for whatever they ask",
+            system_prompt:
+              "You are an AI assistant , your job is to help people for whatever they ask",
           },
         },
       },
@@ -428,5 +429,43 @@ export async function deleteAgent(id: string): Promise<boolean> {
   } catch (error) {
     console.error("Error deleting agent:", error);
     throw new Error("Failed to delete agent");
+  }
+}
+
+export async function getAgentExecutions(
+  agentId: string,
+  page = 1,
+  pageSize = 20
+): Promise<CallHistoryResponse> {
+  try {
+    const agent = await prisma.agents.findUnique({
+      where:{
+        id: agentId
+      }
+    })
+    if(!agent){
+      throw new Error('No agent found')
+    }
+    const response = await fetch(
+      `https://api.bolna.ai/v2/agent/${agent.bolnaId}/executions?page_number=${page}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.BOLNA_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.log()
+      throw new Error(`Failed to fetch executions: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching agent executions:", error);
+    throw error;
   }
 }
