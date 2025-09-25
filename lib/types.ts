@@ -48,7 +48,6 @@ export interface CallExecution {
     hangup_reason: string;
     hangup_provider_code: number;
   };
-  extracted_data?: Record<string, any>;
 }
 
 export interface CallHistoryResponse {
