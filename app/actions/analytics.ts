@@ -65,7 +65,8 @@ export async function getTotalCallDurationByAgentId(
     );
 
     // Log and sum up conversation_time from all executions in this page
-    res.data.data.forEach((execution: any) => {
+    //@ts-expect-error error-expected
+    res.data.data.forEach((execution) => {
       console.log(execution);
       const duration = execution.conversation_duration || 0;
       console.log(
@@ -129,7 +130,8 @@ export async function getExecutionTimestamps(agentId: string): Promise<Date[]> {
 
     // Extract created_at timestamps from all executions in this page
     const pageTimestamps = res.data.data.map(
-      (execution: any) => new Date(execution.created_at)
+        //@ts-expect-error ero repxetd
+      (execution) => new Date(execution.created_at)
     );
     
     timestamps.push(...pageTimestamps);
