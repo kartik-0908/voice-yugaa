@@ -1,7 +1,3 @@
-import { createAgent, getAllAgents } from "@/app/actions/agents";
-import { revalidatePath } from "next/cache";
-import Link from "next/link";
-import CreateAgentForm from "./comp";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -14,7 +10,5 @@ export default async function AgentsPage() {
   if (!session) {
     redirect("/login");
   }
- return <CallHistory/>
-
- 
+  return <CallHistory />;
 }
